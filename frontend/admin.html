@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quản lý | SneakerHub</title>
+<style>
+:root{--ink:#111;--lime:#d9ff38;--bg:#f4f4f6;--card:#fff;--line:#e6e6e9;--muted:#767680;--danger:#e0393e;--danger-bg:#fdeceb;--ok:#1c9a5b;--ok-bg:#e9f8f0;--warn:#b8860b;--warn-bg:#fdf6e3;--info:#3457d5;--info-bg:#ecf0fd}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
+.hidden{display:none!important}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--ink);outline-offset:1px}
+
+/* ---- login screen ---- */
+.login-wrap{min-height:100vh;display:grid;place-items:center;background:var(--ink);padding:20px}
+.login-card{background:#fff;width:min(380px,100%);border-radius:16px;padding:32px 28px}
+.login-card .logo{font-size:22px;font-weight:900;margin-bottom:4px}
+.login-card .logo span{color:#b8d400}
+.login-card p.tag{color:var(--muted);font-size:13px;margin:0 0 22px}
+.login-card label{display:block;font-size:12px;font-weight:700;margin:14px 0 6px;color:#444}
+.login-btn{width:100%;background:var(--ink);color:var(--lime);border:0;border-radius:8px;padding:12px;font-weight:800;margin-top:20px}
+.login-err{background:var(--danger-bg);color:var(--danger);border-radius:8px;padding:10px 12px;font-size:13px;margin-top:14px}
+.back-link{display:block;text-align:center;margin-top:16px;font-size:13px;color:var(--muted);text-decoration:none}
+
+/* ---- app shell ---- */
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+.sidebar{background:var(--ink);color:#fff;padding:22px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.sidebar .logo{font-size:19px;font-weight:900;padding:0 8px 24px}
+.sidebar .logo span{color:var(--lime)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:9px;color:#c9c9cf;text-decoration:none;font-size:14px;font-weight:600;border:0;background:none;width:100%;text-align:left;margin-bottom:2px}
+.nav-item:hover{background:#1d1d1d;color:#fff}
+.nav-item.active{background:var(--lime);color:var(--ink)}
+.sidebar-foot{margin-top:auto;padding-top:16px;border-top:1px solid #2a2a2a}
+.who{font-size:13px;padding:8px;color:#aaa}
+.who b{color:#fff;display:block;font-size:14px}
+.ghost-link{display:block;padding:9px 12px;font-size:13px;color:#c9c9cf;text-decoration:none;border-radius:8px}
+.ghost-link:hover{background:#1d1d1d;color:#fff}
+
+.main{padding:28px 34px;max-width:1180px}
+.topbar{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:22px}
+.topbar h1{font-size:24px;margin:0}
+.topbar p{color:var(--muted);font-size:13px;margin:4px 0 0}
+
+/* ---- stat cards ---- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.stat.hi{background:var(--ink);color:#fff;border-color:var(--ink)}
+.stat .lbl{font-size:12px;color:var(--muted);font-weight:700}
+.stat.hi .lbl{color:#b8b8b8}
+.stat .val{font-size:26px;font-weight:900;margin-top:6px}
+.stat .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.stat.hi .sub{color:var(--lime)}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:20px}
+.panel h2{font-size:16px;margin:0 0 14px}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;padding:0 10px 10px;border-bottom:1px solid var(--line)}
+td{padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums}
+.pimg{width:42px;height:42px;border-radius:8px;object-fit:cover;background:#eee}
+.prow{display:flex;align-items:center;gap:10px}
+.muted{color:var(--muted)}
+
+.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:800}
+.pill.pending{background:var(--warn-bg);color:var(--warn)}
+.pill.confirmed{background:var(--info-bg);color:var(--info)}
+.pill.shipping{background:#f1e9fd;color:#7c3aed}
+.pill.completed{background:var(--ok-bg);color:var(--ok)}
+.pill.cancelled{background:var(--danger-bg);color:var(--danger)}
+
+.iconbtn{border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 10px;font-size:12px;font-weight:700}
+.iconbtn:hover{border-color:var(--ink)}
+.iconbtn.danger{color:var(--danger);border-color:#f6c9c9}
+.iconbtn.danger:hover{background:var(--danger-bg)}
+
+.toolbar{display:flex;gap:10px;margin-bottom:16px}
+.toolbar input{max-width:280px}
+.btn-primary{background:var(--ink);color:var(--lime);border:0;border-radius:8px;padding:11px 18px;font-weight:800;white-space:nowrap}
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter{border:1px solid var(--line);background:#fff;border-radius:20px;padding:7px 15px;font-size:13px;font-weight:700;color:var(--muted)}
+.filter.active{background:var(--ink);color:var(--lime);border-color:var(--ink)}
+
+.empty{text-align:center;color:var(--muted);padding:36px 10px;font-size:14px}
+
+/* ---- modal ---- */
+.modal{position:fixed;inset:0;background:#0009;display:grid;place-items:center;padding:20px;z-index:40}
+.modal-box{background:#fff;width:min(460px,100%);max-height:90vh;overflow:auto;border-radius:16px;padding:26px}
+.modal-box h2{margin:0 0 18px;font-size:18px}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:#444}
+.field-row{display:flex;gap:10px}
+.field-row>*{flex:1}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.btn-secondary{background:#fff;border:1px solid var(--line);border-radius:8px;padding:11px 18px;font-weight:700;flex:1}
+
+/* ---- toast ---- */
+#toast{position:fixed;bottom:24px;right:24px;z-index:60;display:flex;flex-direction:column;gap:8px}
+.toast-item{background:var(--ink);color:#fff;padding:12px 18px;border-radius:9px;font-size:13.5px;font-weight:600;box-shadow:0 8px 20px #0003;border-left:4px solid var(--lime)}
+.toast-item.err{border-left-color:var(--danger)}
+
+.order-items{font-size:12.5px;color:var(--muted);max-width:220px}
+.order-status-select{width:auto;padding:6px 9px;font-size:12.5px;font-weight:700}
+
+@media(max-width:900px){.shell{grid-template-columns:1fr}.sidebar{position:static;height:auto;flex-direction:row;align-items:center;flex-wrap:wrap;gap:4px}.sidebar-foot{margin:0 0 0 auto;padding:0;border:0;display:flex;align-items:center;gap:10px}.stats{grid-template-columns:1fr 1fr}.main{padding:18px}}
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-wrap">
+  <div class="login-card">
+    <div class="logo">SNEAKER<span>HUB</span></div>
+    <p class="tag">Đăng nhập trang quản lý</p>
+    <form onsubmit="doLogin(event)">
+      <label>Email</label>
+      <input id="loginEmail" type="email" required placeholder="admin@sneakerhub.vn">
+      <label>Mật khẩu</label>
+      <input id="loginPass" type="password" required placeholder="••••••••">
+      <div id="loginErr" class="login-err hidden"></div>
+      <button class="login-btn">Đăng nhập</button>
+    </form>
+    <a class="back-link" href="/">← Về trang cửa hàng</a>
+  </div>
+</div>
+
+<div id="app" class="shell hidden">
+  <aside class="sidebar">
+    <div class="logo">SNEAKER<span>HUB</span></div>
+    <button class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Tổng quan</button>
+    <button class="nav-item" data-tab="products" onclick="switchTab('products')">👟 Sản phẩm</button>
+    <button class="nav-item" data-tab="orders" onclick="switchTab('orders')">📦 Đơn hàng</button>
+    <button class="nav-item" data-tab="feedback" onclick="switchTab('feedback')">💬 Feedback</button>
+    <div class="sidebar-foot">
+      <div class="who"><b id="whoName">-</b><span id="whoEmail"></span></div>
+      <a class="ghost-link" href="/">← Về trang cửa hàng</a>
+      <button class="nav-item" style="color:#e88" onclick="doLogout()">⎋ Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- DASHBOARD -->
+    <section id="tab-dashboard">
+      <div class="topbar"><div><h1>Tổng quan</h1><p>Tình hình kinh doanh SneakerHub</p></div></div>
+      <div class="stats" id="statGrid"></div>
+      <div class="panel">
+        <h2>Đơn hàng gần đây</h2>
+        <table><thead><tr><th>Mã</th><th>Khách hàng</th><th>Tổng tiền</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+          <tbody id="recentOrdersBody"></tbody></table>
+      </div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section id="tab-products" class="hidden">
+      <div class="topbar"><div><h1>Sản phẩm</h1><p>Quản lý danh mục giày trong cửa hàng</p></div></div>
+      <div class="toolbar">
+        <input id="productSearch" placeholder="🔍 Tìm theo tên, thương hiệu..." oninput="renderProducts()">
+        <button class="btn-primary" onclick="openProductModal()">+ Thêm sản phẩm</button>
+      </div>
+      <div class="panel" style="padding:8px 20px">
+        <table><thead><tr><th>Sản phẩm</th><th>Thương hiệu</th><th>Giá</th><th>Tồn kho</th><th>Trạng thái</th><th></th></tr></thead>
+          <tbody id="productsBody"></tbody></table>
+        <div id="productsEmpty" class="empty hidden">Không tìm thấy sản phẩm nào.</div>
+      </div>
+    </section>
+
+    <!-- ORDERS -->
+    <section id="tab-orders" class="hidden">
+      <div class="topbar"><div><h1>Đơn hàng</h1><p>Theo dõi và cập nhật trạng thái đơn</p></div></div>
+      <div class="filters" id="orderFilters"></div>
+      <div class="panel" style="padding:8px 20px">
+        <table><thead><tr><th>Mã</th><th>Khách hàng</th><th>Sản phẩm</th><th>Tổng tiền</th><th>Trạng thái</th><th>Ngày đặt</th></tr></thead>
+          <tbody id="ordersBody"></tbody></table>
+        <div id="ordersEmpty" class="empty hidden">Chưa có đơn hàng nào.</div>
+      </div>
+    </section>
+
+    <!-- FEEDBACK -->
+    <section id="tab-feedback" class="hidden">
+      <div class="topbar"><div><h1>Feedback</h1><p>Góp ý và liên hệ từ khách hàng</p></div></div>
+      <div class="panel" id="feedbackPanel" style="padding:8px 20px"></div>
+    </section>
+  </main>
+</div>
+
+<div id="productModal" class="modal hidden">
+  <div class="modal-box">
+    <h2 id="productModalTitle">Thêm sản phẩm</h2>
+    <form onsubmit="saveProduct(event)">
+      <input type="hidden" id="pId">
+      <div class="field"><label>Tên sản phẩm</label><input id="pName" required placeholder="Ví dụ: Air Max 270"></div>
+      <div class="field-row">
+        <div class="field"><label>Thương hiệu</label><input id="pBrand" required placeholder="Nike"></div>
+        <div class="field"><label>Danh mục</label><input id="pCategory" placeholder="Sneaker"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Giá bán (₫)</label><input id="pPrice" type="number" required min="0"></div>
+        <div class="field"><label>Giá gốc (₫)</label><input id="pOldPrice" type="number" min="0" placeholder="Tùy chọn"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Tồn kho</label><input id="pStock" type="number" required min="0" value="10"></div>
+        <div class="field"><label>Size có sẵn</label><input id="pSize" placeholder="38,39,40,41,42"></div>
+      </div>
+      <div class="field"><label>URL ảnh</label><input id="pImage" placeholder="https://..."></div>
+      <div class="field"><label>Mô tả</label><textarea id="pDesc" rows="3" placeholder="Mô tả ngắn về sản phẩm"></textarea></div>
+      <div class="field" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="pIsNew" style="width:auto"><label style="margin:0">Đánh dấu là hàng mới (NEW)</label></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeProductModal()">Hủy</button>
+        <button class="btn-primary" style="flex:1">Lưu sản phẩm</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API='/api';
+let token=localStorage.getItem('sneaker_token')||'';
+let user=JSON.parse(localStorage.getItem('sneaker_user')||'null');
+let allProducts=[], allOrders=[], orderFilter='all';
+const money=n=>Number(n||0).toLocaleString('vi-VN')+'₫';
+const dt=s=>new Date(s).toLocaleString('vi-VN');
+const headers=()=>({'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{})});
+const STATUSES=['pending','confirmed','shipping','completed','cancelled'];
+const STATUS_LABEL={pending:'Chờ xử lý',confirmed:'Đã xác nhận',shipping:'Đang giao',completed:'Hoàn tất',cancelled:'Đã hủy'};
+
+function toast(msg,isErr){
+  const t=document.createElement('div');
+  t.className='toast-item'+(isErr?' err':'');
+  t.textContent=msg;
+  document.getElementById('toast').appendChild(t);
+  setTimeout(()=>t.remove(),3200);
+}
+
+/* ---------- auth ---------- */
+async function checkAuth(){
+  if(!token||!user||user.role!=='admin'){ return showLogin(); }
+  const r=await fetch(API+'/admin/stats',{headers:headers()});
+  if(!r.ok) return showLogin();
+  showApp();
+}
+function showLogin(){
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+}
+function showApp(){
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('whoName').textContent=user.name;
+  document.getElementById('whoEmail').textContent=user.email;
+  loadDashboard();
+}
+async function doLogin(e){
+  e.preventDefault();
+  const errBox=document.getElementById('loginErr'); errBox.classList.add('hidden');
+  const body={email:document.getElementById('loginEmail').value,password:document.getElementById('loginPass').value};
+  const r=await fetch(API+'/auth/login',{method:'POST',headers:headers(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok){ errBox.textContent=d.message||'Đăng nhập thất bại'; errBox.classList.remove('hidden'); return; }
+  if(d.user.role!=='admin'){ errBox.textContent='Tài khoản này không có quyền quản trị.'; errBox.classList.remove('hidden'); return; }
+  token=d.token; user=d.user;
+  localStorage.setItem('sneaker_token',token); localStorage.setItem('sneaker_user',JSON.stringify(user));
+  showApp();
+}
+function doLogout(){
+  token=''; user=null;
+  localStorage.removeItem('sneaker_token'); localStorage.removeItem('sneaker_user');
+  showLogin();
+}
+
+/* ---------- tabs ---------- */
+function switchTab(name){
+  document.querySelectorAll('.nav-item[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  ['dashboard','products','orders','feedback'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('hidden',t!==name));
+  if(name==='dashboard') loadDashboard();
+  if(name==='products') loadProducts();
+  if(name==='orders') loadOrders();
+  if(name==='feedback') loadFeedback();
+}
+
+/* ---------- dashboard ---------- */
+async function loadDashboard(){
+  const r=await fetch(API+'/admin/stats',{headers:headers()});
+  if(r.status===401||r.status===403) return showLogin();
+  const s=await r.json();
+  document.getElementById('statGrid').innerHTML=`
+    <div class="stat hi"><div class="lbl">Doanh thu</div><div class="val">${money(s.total_revenue)}</div><div class="sub">Không tính đơn đã hủy</div></div>
+    <div class="stat"><div class="lbl">Đơn hàng</div><div class="val">${s.total_orders}</div><div class="sub">${s.pending_orders} đơn chờ xử lý</div></div>
+    <div class="stat"><div class="lbl">Sản phẩm</div><div class="val">${s.total_products}</div><div class="sub">${s.low_stock>0?s.low_stock+' sản phẩm sắp hết hàng':'Tồn kho ổn định'}</div></div>
+    <div class="stat"><div class="lbl">Khách hàng</div><div class="val">${s.total_customers}</div><div class="sub">Tài khoản đã đăng ký</div></div>`;
+  const ro=await (await fetch(API+'/admin/orders',{headers:headers()})).json();
+  document.getElementById('recentOrdersBody').innerHTML=(ro.slice(0,6).map(o=>`
+    <tr><td>#${o.id}</td><td>${o.customer_name}</td><td class="num">${money(o.total)}</td>
+    <td><span class="pill ${o.status}">${STATUS_LABEL[o.status]}</span></td><td class="muted">${dt(o.created_at)}</td></tr>`).join(''))
+    || '<tr><td colspan="5" class="empty">Chưa có đơn hàng nào.</td></tr>';
+}
+
+/* ---------- products ---------- */
+async function loadProducts(){
+  const r=await fetch(API+'/admin/products',{headers:headers()});
+  if(r.status===401||r.status===403) return showLogin();
+  allProducts=await r.json();
+  renderProducts();
+}
+function renderProducts(){
+  const q=(document.getElementById('productSearch').value||'').toLowerCase();
+  const rows=allProducts.filter(p=>!q||p.name.toLowerCase().includes(q)||p.brand.toLowerCase().includes(q));
+  document.getElementById('productsBody').innerHTML=rows.map(p=>`
+    <tr>
+      <td><div class="prow"><img class="pimg" src="${p.image||''}" alt=""><div><div><b>${p.name}</b></div><div class="muted">Size ${p.size}</div></div></div></td>
+      <td>${p.brand}</td>
+      <td class="num"><b>${money(p.price)}</b>${p.old_price?`<div class="muted" style="text-decoration:line-through">${money(p.old_price)}</div>`:''}</td>
+      <td class="num">${p.stock<=5?`<span style="color:var(--danger);font-weight:700">${p.stock}</span>`:p.stock}</td>
+      <td>${p.is_new?'<span class="pill confirmed">NEW</span>':'<span class="muted">-</span>'}</td>
+      <td style="white-space:nowrap"><button class="iconbtn" onclick='openProductModal(${JSON.stringify(p)})'>Sửa</button>
+      <button class="iconbtn danger" onclick="deleteProduct(${p.id})" style="margin-left:6px">Xóa</button></td>
+    </tr>`).join('');
+  document.getElementById('productsEmpty').classList.toggle('hidden',rows.length>0);
+}
+function openProductModal(p){
+  document.getElementById('productModalTitle').textContent=p?'Sửa sản phẩm':'Thêm sản phẩm';
+  document.getElementById('pId').value=p?p.id:'';
+  document.getElementById('pName').value=p?p.name:'';
+  document.getElementById('pBrand').value=p?p.brand:'';
+  document.getElementById('pCategory').value=p?p.category:'Sneaker';
+  document.getElementById('pPrice').value=p?p.price:'';
+  document.getElementById('pOldPrice').value=p&&p.old_price?p.old_price:'';
+  document.getElementById('pStock').value=p?p.stock:10;
+  document.getElementById('pSize').value=p?p.size:'38,39,40,41,42,43';
+  document.getElementById('pImage').value=p?p.image:'';
+  document.getElementById('pDesc').value=p?p.description:'';
+  document.getElementById('pIsNew').checked=!!(p&&p.is_new);
+  document.getElementById('productModal').classList.remove('hidden');
+}
+function closeProductModal(){ document.getElementById('productModal').classList.add('hidden'); }
+async function saveProduct(e){
+  e.preventDefault();
+  const id=document.getElementById('pId').value;
+  const body={
+    name:document.getElementById('pName').value,
+    brand:document.getElementById('pBrand').value,
+    category:document.getElementById('pCategory').value||'Sneaker',
+    price:Number(document.getElementById('pPrice').value),
+    old_price:Number(document.getElementById('pOldPrice').value||0),
+    stock:Number(document.getElementById('pStock').value),
+    size:document.getElementById('pSize').value||'38,39,40,41,42,43',
+    image:document.getElementById('pImage').value,
+    description:document.getElementById('pDesc').value,
+    is_new:document.getElementById('pIsNew').checked,
+  };
+  const r=await fetch(API+'/admin/products'+(id?'/'+id:''),{method:id?'PUT':'POST',headers:headers(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok){ toast(d.message||'Có lỗi xảy ra',true); return; }
+  toast(id?'Đã cập nhật sản phẩm':'Đã thêm sản phẩm');
+  closeProductModal(); loadProducts();
+}
+async function deleteProduct(id){
+  if(!confirm('Xóa sản phẩm này? Hành động không thể hoàn tác.')) return;
+  const r=await fetch(API+'/admin/products/'+id,{method:'DELETE',headers:headers()});
+  const d=await r.json();
+  toast(d.message||'Đã xóa', !r.ok);
+  loadProducts();
+}
+
+/* ---------- orders ---------- */
+async function loadOrders(){
+  const r=await fetch(API+'/admin/orders',{headers:headers()});
+  if(r.status===401||r.status===403) return showLogin();
+  allOrders=await r.json();
+  const filters=['all',...STATUSES];
+  document.getElementById('orderFilters').innerHTML=filters.map(f=>`
+    <button class="filter ${f===orderFilter?'active':''}" onclick="setOrderFilter('${f}')">${f==='all'?'Tất cả':STATUS_LABEL[f]}</button>`).join('');
+  renderOrders();
+}
+function setOrderFilter(f){ orderFilter=f; loadOrders(); }
+function renderOrders(){
+  const rows=orderFilter==='all'?allOrders:allOrders.filter(o=>o.status===orderFilter);
+  document.getElementById('ordersBody').innerHTML=rows.map(o=>`
+    <tr>
+      <td><b>#${o.id}</b></td>
+      <td><b>${o.customer_name}</b><div class="muted">${o.phone}</div></td>
+      <td class="order-items">${(o.items||[]).map(i=>`${i.product_name} ×${i.quantity}`).join(', ')||'-'}</td>
+      <td class="num"><b>${money(o.total)}</b></td>
+      <td><select class="order-status-select" onchange="updateOrderStatus(${o.id},this.value)">
+        ${STATUSES.map(s=>`<option value="${s}" ${s===o.status?'selected':''}>${STATUS_LABEL[s]}</option>`).join('')}
+      </select></td>
+      <td class="muted">${dt(o.created_at)}</td>
+    </tr>`).join('');
+  document.getElementById('ordersEmpty').classList.toggle('hidden',rows.length>0);
+}
+async function updateOrderStatus(id,status){
+  const r=await fetch(API+'/admin/orders/'+id,{method:'PATCH',headers:headers(),body:JSON.stringify({status})});
+  const d=await r.json();
+  if(!r.ok){ toast(d.message||'Cập nhật thất bại',true); return; }
+  toast('Đã cập nhật đơn #'+id+' → '+STATUS_LABEL[status]);
+  loadOrders();
+}
+
+/* ---------- feedback ---------- */
+async function loadFeedback(){
+  const r=await fetch(API+'/admin/contacts',{headers:headers()});
+  if(r.status===401||r.status===403) return showLogin();
+  const rows=await r.json();
+  document.getElementById('feedbackPanel').innerHTML=rows.length?rows.map(c=>`
+    <div style="padding:14px 0;border-bottom:1px solid var(--line)">
+      <div style="display:flex;justify-content:space-between"><b>${c.name}</b><span class="muted" style="font-size:12px">${dt(c.created_at)}</span></div>
+      <div class="muted" style="font-size:12.5px;margin:2px 0 8px">${c.email}</div>
+      <div>${c.message}</div>
+    </div>`).join('') : '<div class="empty">Chưa có feedback nào từ khách hàng.</div>';
+}
+
+checkAuth();
+</script>
+</body>
+</html>
